@@ -1,3 +1,4 @@
+# move to .github/workflows/build_package.yml
 name: Build VPM Package
 
 on:
@@ -6,7 +7,8 @@ on:
       - 'v*'
   pull_request:
   workflow_dispatch:
-
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
