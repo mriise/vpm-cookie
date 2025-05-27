@@ -28,7 +28,7 @@ cookiecutter-vpm-package/
 ### Option A: Github Template
 
 - Copy this repo as a template
-- In new repository Actions > Replace Repository with Cookiecutter > Run Workflow
+- In new repository `Actions > Replace Repository with Cookiecutter > Run Workflow`
 - Fill in fields
 - Run workflow
 - Move `PUT_IN_GITHUB_WORKFLOWS_build-package.yml` to `.github/workflows/build_package.yml`. On Github web Click edit in top right, then change the filename to `.github/workflows/build_package.yml`
@@ -38,7 +38,7 @@ Create a release by adding a version tag/release starting with `v`
 
 ### Option B: Manual
 
-Linux:
+Bash:
 
 ```bash
 # install cookiecutter ~2.5, see their readme for install instructions
