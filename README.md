@@ -31,7 +31,8 @@ cookiecutter-vpm-package/
 - In new repository Actions > Replace Repository with Cookiecutter > Run Workflow
 - Fill in fields
 - Run workflow
-- move `PUT_IN_GITHUB_WORKFLOWS_build-package.yml` to `.github/workflows/build_package.yml`
+- Move `PUT_IN_GITHUB_WORKFLOWS_build-package.yml` to `.github/workflows/build_package.yml`. On Github web Click edit in top right, then change the filename to `.github/workflows/build_package.yml`
+- Delete `.github/workflows/eat-cookie.yml`
 
 ### Option B: Manual
 
@@ -51,7 +52,7 @@ cookiecutter -o ../ . # makes package in a sibling folder
 # author_name: myname
 # unity_version: 2022.3
 
-mkdir -p ./.github/workflows/ && mv PUT_IN_GITHUB_WORKFLOWS_build-package.yml ./.github/workflows/
+mkdir -p ./.github/workflows/ && mv PUT_IN_GITHUB_WORKFLOWS_build-package.yml ./.github/workflows/ && rm .github/workflows/eat-cookie.yml
 ```
 
 #### Manual Requirements
