@@ -20,25 +20,27 @@ cookiecutter-vpm-package/
     │   └── {{cookiecutter.namespace}}.Editor.asmdef
     ├── Documentation~/
     │   └── CHANGELOG.md
-    └── .github/
-        └── workflows/
-            └── build-package.yml
+    └── PUT_IN_GITHUB_WORKFLOWS_build-package.yml
 ```
 
 ## Usage
 
-### Option A Template (Recommended)
+### Option A: Github Template
 
 - Copy this repo as a template
 - In new repository Actions > Replace Repository with Cookiecutter > Run Workflow
 - Fill in fields
 - Run workflow
+- move `PUT_IN_GITHUB_WORKFLOWS_build-package.yml` to `.github/workflows/build_package.yml`
 
-### Option B Manual
+### Option B: Manual
+
+Linux:
 
 ```bash
-git clone <this package>
-cd <this package>
+# install cookiecutter ~2.5, see their readme for install instructions
+git clone https://github.com/mriise/vpm-cookie
+cd vpm-cookie
 cookiecutter -o ../ . # makes package in a sibling folder
 
 # Prompts:
@@ -48,6 +50,8 @@ cookiecutter -o ../ . # makes package in a sibling folder
 # description: Custom Avatar Addon
 # author_name: myname
 # unity_version: 2022.3
+
+mkdir -p ./.github/workflows/ && mv PUT_IN_GITHUB_WORKFLOWS_build-package.yml ./.github/workflows/
 ```
 
 #### Manual Requirements
