@@ -129,12 +129,11 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Replace repository with cookiecutter template
-
-            Package: ${{ github.event.inputs.package_name }}
-            Display Name: ${{ github.event.inputs.display_name }}
-            Version: ${{ github.event.inputs.version }}
-            Author: ${{ github.event.inputs.author_name }}
+            git commit -m "Replace repository with cookiecutter template" \
+              -m "Package: ${{ github.event.inputs.package_name }}" \
+              -m "Display Name: ${{ github.event.inputs.display_name }}" \
+              -m "Version: ${{ github.event.inputs.version }}" \
+              -m "Author: ${{ github.event.inputs.author_name }}" \
             
             git push origin ${{ github.ref_name }}
           fi
