@@ -1,143 +1,81 @@
-name: Replace Repository with Cookiecutter
+name: Build VPM Package
 
 on:
+  push:
+    tags:
+      - 'v*'
+  pull_request:
   workflow_dispatch:
-    inputs:
-      package_name:
-        description: 'Package name (com.yourname.packagename)'
-        required: true
-        default: 'com.yourname.packagename'
-      display_name:
-        description: 'Package display name'
-        required: true
-        default: 'Package Display Name'
-      version:
-        description: 'Package version'
-        required: true
-        default: '0.1.0'
-      description:
-        description: 'Package description'
-        required: true
-        default: 'A VPM package'
-      author_name:
-        description: 'Author name'
-        required: true
-        default: 'Your Name'
-      author_email:
-        description: 'Author email'
-        required: true
-        default: 'your.email@example.com'
-      author_url:
-        description: 'Author URL'
-        required: true
-        default: 'https://github.com/yourusername'
-      unity_version:
-        description: 'Unity version'
-        required: true
-        default: '2022.3'
-      license:
-        description: 'License type'
-        required: true
-        default: 'MIT'
-        type: choice
-        options:
-          - MIT
-          - Apache-2.0
-          - GPL-3.0
-          - Custom
-      cookiecutter_template_url:
-        description: 'Cookiecutter template URL'
-        required: true
-        default: 'https://github.com/your-org/your-cookiecutter-template.git'
 
 jobs:
-  replace-repository:
+  build:
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    # - name: Setup .NET
+    #   uses: actions/setup-dotnet@v3
+    #   with:
+    #     dotnet-version: '6.0.x'
+    
+    # - name: Install vrc-get
+    #   run: |
+    #     curl -L https://github.com/vrc-get/vrc-get/releases/latest/download/vrc-get-linux-x64.tar.gz | tar -xz
+    #     sudo mv vrc-get /usr/local/bin/
+    #     vrc-get --version
+    
+    - name: Validate package manifest
+      run: |
+        if [ -f package.json ]; then
+          echo "✓ package.json found"
+          cat package.json | jq . > /dev/null && echo "✓ Valid JSON" || exit 1
+        else
+          echo "✗ package.json not found"
+          exit 1
+        fi
+    
+    - name: Create package archive
+      run: |
+        PACKAGE_NAME="{{cookiecutter.package_name}}"
+        VERSION="${GITHUB_REF#refs/tags/v}"
+        if [[ -z "$VERSION" || "$VERSION" == "$GITHUB_REF" ]]; then
+          VERSION="{{cookiecutter.version}}"
+        fi
+        
+        echo "Creating package: ${PACKAGE_NAME}-${VERSION}.zip"
+        
+        # Create zip with deflate compression (not deflate64)
+        # -6 = compression level 6 (good balance of speed/size)
+        # -r = recursive
+        # -Z deflate = force deflate method (ensures compatibility)
+        zip -6 -r -Z deflate "${PACKAGE_NAME}-${VERSION}.zip" . \
+          -x "*.git*" "*.github*" "*.DS_Store" "*Thumbs.db*" \
+             "*.meta" "*.tmp" "*~" "*.log"
+        
+        # Generate SHA256
+        sha256sum "${PACKAGE_NAME}-${VERSION}.zip" > "${PACKAGE_NAME}-${VERSION}.zip.sha256"
+       
+        echo "PACKAGE_FILE=${PACKAGE_NAME}-${VERSION}.zip" >> $GITHUB_ENV
+        echo "SHA256_FILE=${PACKAGE_NAME}-${VERSION}.zip.sha256" >> $GITHUB_ENV
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
-
-      - name: Install cookiecutter
-        run: pip install cookiecutter
-
-      - name: Create cookiecutter config
-        run: |
-          cat > cookiecutter_config.json << 'EOF'
-          {
-            "package_name": "${{ github.event.inputs.package_name }}",
-            "display_name": "${{ github.event.inputs.display_name }}",
-            "version": "${{ github.event.inputs.version }}",
-            "description": "${{ github.event.inputs.description }}",
-            "author_name": "${{ github.event.inputs.author_name }}",
-            "author_email": "${{ github.event.inputs.author_email }}",
-            "author_url": "${{ github.event.inputs.author_url }}",
-            "unity_version": "${{ github.event.inputs.unity_version }}",
-            "license": "${{ github.event.inputs.license }}"
-          }
-          EOF
-
-      - name: Generate project from cookiecutter
-        run: |
-          cookiecutter "${{ github.event.inputs.cookiecutter_template_url }}" \
-            --config-file cookiecutter_config.json \
-            --no-input \
-            --output-dir /tmp/cookiecutter-output
-
-      - name: Clear repository contents (preserving .git)
-        run: |
-          # List what we're about to delete for safety
-          echo "Files to be deleted:"
-          find . -mindepth 1 -maxdepth 1 ! -name '.git' -print
-          
-          # Explicitly preserve .git and .github directories
-          find . -mindepth 1 -maxdepth 1 \
-            ! -name '.git' \
-            ! -name '.github' \
-            -print0 | xargs -0 rm -rf
-
-      - name: Copy cookiecutter output
-        run: |
-          # Find the generated directory (assuming single output)
-          GENERATED_DIR=$(find /tmp/cookiecutter-output -mindepth 1 -maxdepth 1 -type d | head -n 1)
-          if [ -z "$GENERATED_DIR" ]; then
-            echo "Error: No generated directory found"
-            exit 1
-          fi
-          
-          # Copy all contents from generated directory to repository root
-          cp -r "$GENERATED_DIR"/* .
-          
-          # Copy hidden files if they exist
-          if [ -n "$(find "$GENERATED_DIR" -maxdepth 1 -name '.*' -not -name '.' -not -name '..')" ]; then
-            cp -r "$GENERATED_DIR"/.* . 2>/dev/null || true
-          fi
-
-      - name: Configure Git
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-
-      - name: Commit and push changes
-        run: |
-          git add .
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "Replace repository with cookiecutter template
-
-            Package: ${{ github.event.inputs.package_name }}
-            Display Name: ${{ github.event.inputs.display_name }}
-            Version: ${{ github.event.inputs.version }}
-            Author: ${{ github.event.inputs.author_name }}
-            Template: ${{ github.event.inputs.cookiecutter_template_url }}"
-            
-            git push origin ${{ github.ref_name }}
-          fi
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: vpm-package
+        path: |
+          *.zip
+          *.sha256
+    
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          ${{ '{{' }} env.PACKAGE_FILE }}
+          ${{ '{{' }} env.SHA256_FILE }}
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ '{{' }} secrets.GITHUB_TOKEN }}

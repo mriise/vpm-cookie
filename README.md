@@ -7,6 +7,8 @@ An open source [cookiecutter](https://github.com/cookiecutter/cookiecutter) temp
 ```text
 cookiecutter-vpm-package/
 ├── cookiecutter.json
+├── hooks/
+|   └── pre_gen_project.py
 └── {{cookiecutter.package_name}}/
     ├── package.json
     ├── README.md
@@ -25,6 +27,15 @@ cookiecutter-vpm-package/
 
 ## Usage
 
+### Option A Template (Recommended)
+
+- Copy this repo as a template
+- In new repository Actions > Replace Repository with Cookiecutter > Run Workflow
+- Fill in fields
+- Run workflow
+
+### Option B Manual
+
 ```bash
 git clone <this package>
 cd <this package>
@@ -39,7 +50,7 @@ cookiecutter -o ../ . # makes package in a sibling folder
 # unity_version: 2022.3
 ```
 
-## Requirements
+#### Manual Requirements
 
 - cookiecutter
 - python3
