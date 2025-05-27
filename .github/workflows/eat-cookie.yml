@@ -49,6 +49,8 @@ on:
 jobs:
   replace-repository:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -118,11 +120,12 @@ jobs:
 
       - name: Configure Dummy Git User
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+
 
       - name: Commit and push changes
         run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
           git add .
           if git diff --staged --quiet; then
             echo "No changes to commit"
@@ -133,7 +136,6 @@ jobs:
             Display Name: ${{ github.event.inputs.display_name }}
             Version: ${{ github.event.inputs.version }}
             Author: ${{ github.event.inputs.author_name }}
-            Template: ${{ github.event.inputs.cookiecutter_template_url }}"
             
             git push origin ${{ github.ref_name }}
           fi
