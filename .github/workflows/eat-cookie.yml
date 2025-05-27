@@ -51,7 +51,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
+      pull-requests: write # maybe not needed?
+      actions: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -92,12 +93,6 @@ jobs:
             --no-input \
             --output-dir /tmp/cookiecutter-output
 
-      - name: Create feature branch
-        run: |
-          BRANCH_NAME="cookiecutter-template-$(date +%Y%m%d-%H%M%S)"
-          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
-          git checkout -b "$BRANCH_NAME"
-
       - name: Clear repository contents (preserving .git)
         run: |
           echo "Files to be deleted:"
@@ -130,47 +125,17 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-      - name: Commit changes
+      - name: Commit and push changes
         run: |
           git add .
           if git diff --staged --quiet; then
             echo "No changes to commit"
-            echo "HAS_CHANGES=false" >> $GITHUB_ENV
           else
             git commit -m "Replace repository with cookiecutter template" \
               -m "Package: ${{ github.event.inputs.package_name }}" \
               -m "Display Name: ${{ github.event.inputs.display_name }}" \
               -m "Version: ${{ github.event.inputs.version }}" \
-              -m "Author: ${{ github.event.inputs.author_name }}"
-            echo "HAS_CHANGES=true" >> $GITHUB_ENV
+              -m "Author: ${{ github.event.inputs.author_name }}" \
+            
+            git push origin ${{ github.ref_name }}
           fi
-
-      - name: Push branch and create PR
-        if: env.HAS_CHANGES == 'true'
-        run: |
-          git push origin "$BRANCH_NAME"
-          
-          # Create PR body with proper multiline handling
-          cat > pr_body.md << 'EOF'
-          This PR replaces the repository contents with a cookiecutter template.
-
-          **Configuration:**
-          - Package: ${{ github.event.inputs.package_name }}
-          - Display Name: ${{ github.event.inputs.display_name }}
-          - Version: ${{ github.event.inputs.version }}
-          - Description: ${{ github.event.inputs.description }}
-          - Author: ${{ github.event.inputs.author_name }}
-          - Unity Version: ${{ github.event.inputs.unity_version }}
-          - License: ${{ github.event.inputs.license }}
-
-          Please review the changes before merging.
-          EOF
-          
-          # Create PR using GitHub CLI
-          gh pr create \
-            --title "Replace repository with cookiecutter template" \
-            --body-file pr_body.md \
-            --base main \
-            --head "$BRANCH_NAME"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
